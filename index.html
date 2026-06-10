@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Saludesa Market</title>
+<style>
+*{box-sizing:border-box;font-family:Segoe UI,sans-serif}body{margin:0;background:#f5f7fa}
+header{background:linear-gradient(90deg,#1f4e79,#0ea5e9);color:#fff;padding:15px 20px;position:sticky;top:0;z-index:5}
+.logo{font-size:28px;font-weight:700}.logo span{font-size:34px}
+.container{padding:20px;max-width:1200px;margin:auto}
+.container{padding:20px;max-width:1200px;margin:auto}
+
+.grid{
+display:grid;
+gap:15px;
+}
+
+/* MÓVILES */
+@media (max-width:768px){
+
+.grid{
+grid-template-columns:repeat(2,1fr);
+gap:10px;
+}
+
+.card{
+padding:8px;
+}
+
+.card img{
+width:100%;
+height:110px;
+object-fit:cover;
+}
+
+.card h3{
+font-size:12px;
+line-height:1.2;
+margin:6px 0;
+}
+
+.card p{
+font-size:11px;
+margin:3px 0;
+}
+
+.btn{
+font-size:11px;
+padding:8px;
+}
+
+}
+
+/* TABLETS */
+@media (min-width:769px) and (max-width:1199px){
+
+.grid{
+grid-template-columns:repeat(3,1fr);
+}
+
+}
+
+/* ESCRITORIO */
+@media (min-width:1200px){
+
+.grid{
+grid-template-columns:repeat(4,1fr);
+}
+
+}
+
+.card{background:#fff;border-radius:14px;padding:12px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.card{background:#fff;border-radius:14px;padding:12px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.card img{width:100%;height:140px;object-fit:cover;border-radius:10px}
+.btn{background:#0ea5e9;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}
+.filter-btn.active{background:#10b981}
+.category-title{margin:25px 0 10px;color:#1f4e79;border-bottom:3px solid #0ea5e9;padding-bottom:6px}
+.cart-float{position:fixed;right:20px;bottom:20px;width:75px;height:75px;border-radius:50%;background:#10b981;color:#fff;border:none;font-size:28px;cursor:pointer;z-index:20}
+.badge{position:absolute;background:red;color:#fff;border-radius:50%;padding:4px 8px;font-size:12px;right:-2px;top:-2px}
+.wrap{position:fixed;right:20px;bottom:20px}
+.drawer{position:fixed;top:0;right:-450px;width:420px;max-width:100%;height:100%;background:#fff;box-shadow:-3px 0 15px rgba(0,0,0,.2);transition:.35s ease;padding:20px;overflow:auto;z-index:30}
+.drawer.open{right:0}
+.close{float:right;border:none;background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer}
+input,textarea{width:100%;padding:10px;margin:6px 0;border:1px solid #ccc;border-radius:8px}
+.row{display:flex;justify-content:space-between;align-items:center}
+h2{color:#1f4e79}
+@media(max-width:600px){.drawer{width:100%}}
+
+#btnSolicitud{
+position:fixed;
+right:20px;
+bottom:105px;
+width:50px;
+height:50px;
+border:none;
+border-radius:50%;
+background:#0ea5e9;
+color:#fff;
+font-size:22px;
+cursor:pointer;
+z-index:9999;
+box-shadow:0 4px 12px rgba(0,0,0,.25);
+transition:all .25s ease;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+#btnSolicitud:hover{
+transform:translateY(-3px) scale(1.05);
+box-shadow:0 8px 18px rgba(0,0,0,.30);
+}
+#btnSolicitud::after{
+content:"Solicitar Producto";
+position:absolute;
+right:60px;
+top:50%;
+transform:translateY(-50%);
+background:#1f2937;
+color:#fff;
+padding:6px 10px;
+border-radius:6px;
+font-size:12px;
+white-space:nowrap;
+opacity:0;
+pointer-events:none;
+transition:.2s;
+}
+#btnSolicitud:hover::after{
+opacity:1;
+}
+@media(max-width:768px){
+#btnSolicitud::after{display:none;}
+}
+</style>
+</head>
+<body>
+<header><div class="logo"><span>🛒</span> Saludesa Market | Tienda para Colaboradores</div></header>
+
+<div class="container">
+<h2>Catálogo de Productos</h2>
+
+<div class="filters" id="filters"></div>
+<div id="products"></div>
+
+<section id="solicitar-producto">
+<h2>¿Lo que buscas no está aquí? Solicítalo</h2>
+<input id="reqName" placeholder="Nombre completo">
+<input id="reqCed" placeholder="Cédula">
+<textarea id="reqText" placeholder="Describe el producto requerido"></textarea>
+<button class="btn" onclick="sendRequest()">Enviar por WhatsApp</button>
+</section>
+</div>
+
+<div class="wrap">
+<button class="cart-float" onclick="toggleCart()">🛒<span id="badge" class="badge">0</span></button>
+</div>
+
+<div id="drawer" class="drawer">
+<button class="close" onclick="toggleCart()">✕</button>
+<h2>Carrito de Compras</h2>
+<div id="cartContainer"></div>
+<h3 id="total">Total a pagar: $0.00</h3>
+<input id="buyerName" placeholder="Nombre completo">
+<input id="buyerCed" placeholder="Cédula">
+<button class="btn" onclick="sendOrder()">Enviar Pedido por WhatsApp</button>
+</div>
+
+<script>
+const categories=["Víveres","Bebidas","Ropa","Accesorios Personales","Electrodomésticos"];
+let activeCategory="Todos";
+
+const products = [
+  // =========================
+  // BEBIDAS
+  // =========================
+  {id:1,name:"Cerveza Corona Lata 473 ml",price:1.32,stock:5,categoria:"Bebidas",img:"https://exitocol.vtexassets.com/arquivos/ids/33440207/Corona-Lata-sixpack-473-CORONA-Corona-Lata-Sixpack-473-2838-ml-3750928_a.jpg"},
+  {id:2,name:"Cerveza Heineken Lager Pack 12",price:8.68,stock:5,categoria:"Bebidas",img:"https://www.cervezas.store/24-large_default/-cerveza-heineken-lager-pack-de-12-latas-de-33-cl-.jpg"},
+  
+  // =========================
+  // VÍVERES
+  // =========================
+  {id:21,name:"Arroz Primicias",price:15.57,stock:5,categoria:"Víveres",img:"https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600"},
+  {id:22,name:"Aceite Cocinero 3 L",price:8.88,stock:5,categoria:"Víveres",img:"https://grupodanec.com.ec/wp-content/uploads/2024/08/Cocinero-3-litros-B.png"},
+  {id:23,name:"Café Oro",price:5.00,stock:5,categoria:"Víveres",img:"https://hosteleriaecuador.com/wp-content/uploads/SOLUBLES-2.webp"},
+  {id:24,name:"Atún Real",price:8.86,stock:5,categoria:"Víveres",img:"https://supermaxi-225de.kxcdn.com/wp-content/uploads/2025/11/90388000792-1-26.jpg"},
+  {id:25,name:"Avena 1 kg",price:2.20,stock:5,categoria:"Víveres",img:"https://www.recetasnestle.com.ec/sites/default/files/2022-04/avena.jpg_0.jpg"},
+  {id:26,name:"Aceite Girasol 1 L",price:3.34,stock:5,categoria:"Víveres",img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDnexpx0C7_rxIffJSkiSokDXoGbcvG4FQpg&s"},
+  {id:27,name:"Comino en Polvo",price:1.00,stock:5,categoria:"Víveres",img:"https://www.elsabor.com.ec/wp-content/uploads/2021/12/COMINO-MOLIDO-50G-600x600.png"},
+  {id:28,name:"Pimienta Molida",price:1.70,stock:5,categoria:"Víveres",img:"https://www.elsabor.com.ec/wp-content/uploads/2021/12/PIMIENTA-PICANTE-MOLIDA-50G-600x600.png"},
+  {id:29,name:"Orégano Molido",price:1.70,stock:5,categoria:"Víveres",img:"https://productoslacena.com.ec/wp-content/uploads/2020/09/OREGANO-MOLIDO.jpeg"},
+  {id:30,name:"Café Minerva",price:5.00,stock:5,categoria:"Víveres",img:"https://santamaria.vtexassets.com/arquivos/ids/162686/27366_G.jpg"},
+  {id:31,name:"Pasta de Achiote",price:2.02,stock:5,categoria:"Víveres",img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVDrLm45RGNatoM2l5cTaWswmBR9G8Ky68Uw&s"},
+  {id:32,name:"Apanadura",price:2.63,stock:5,categoria:"Víveres",img:"https://supermaxi-225de.kxcdn.com/wp-content/uploads/2024/08/7861009910300-1-8.png"},
+  {id:33,name:"Gelatina de Frambuesa",price:3.29,stock:5,categoria:"Víveres",img:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_7jkJjt8mIVwI-wA1zYpfhVHbEhfZg2FCiA&s"},
+  {id:34,name:"Gelatina de Fresa",price:2.98,stock:5,categoria:"Víveres",img:"https://www.levapan.com.ec/wp-content/uploads/2018/01/Gelatina-Gelhada-sabor-fresa-400g.jpg"},
+  {id:35,name:"Cocoa",price:4.35,stock:5,categoria:"Víveres",img:"https://supermaxi-225de.kxcdn.com/wp-content/uploads/2025/07/7862122703664-1-13.png"},
+  {id:36,name:"Sal 2 kg",price:1.00,stock:5,categoria:"Víveres",img:"https://santamaria.vtexassets.com/arquivos/ids/163613/31187_G.jpg"},
+  {id:37,name:"Azúcar 1 kg",price:2.00,stock:5,categoria:"Víveres",img:"https://mercadomi.com.ec/wp-content/uploads/2024/11/La-troncal-azucar-1kg.jpg"},
+  {id:38,name:"Frejol Canario",price:1.89,stock:5,categoria:"Víveres",img:"https://www.elsabor.com.ec/wp-content/uploads/2021/12/FREJOL-CANARIO-EL-SABOR-FUNDA-490-scaled.jpg"},
+  {id:39,name:"Quinua 1 kg",price:2.80,stock:5,categoria:"Víveres",img:"https://supermaxi-225de.kxcdn.com/wp-content/uploads/2024/08/7861042500223-1.png"},
+  {id:40,name:"Harina 2 kg",price:1.55,stock:5,categoria:"Víveres",img:"https://pub-0c43255e05a04f3887e7c78af0259968.r2.dev/2026/05/7861042530879-1.png"},
+
+  // =========================
+  // ROPA
+  // =========================
+ 
+{id:41,name:"Camisa Ecuador Hombre Talla L",price:27.90,stock:8,categoria:"Ropa",img:"https://www.zizi-ecuador.com/cdn/shop/files/ChatGPTImage19feb2026_18_18_00.png?v=1771603545&width=823"},
+
+{id:42,name:"Brasier Negro 36B",price:22.90,stock:12,categoria:"Ropa",img:"https://haby.com.co/cdn/shop/files/11505-negro-v10.jpg?v=1774913077"},
+
+{id:43,name:"BRASIER CELESTE 36B",price:22,stock:1,categoria:"Ropa",img:"https://m.media-amazon.com/images/I/51tciuUZEsL._AC_SY606_.jpg"},
+
+{id:44,name:"BRASIER CREMA SIN BARILLA 36B",price:25,stock:1,categoria:"Ropa",img:"https://http2.mlstatic.com/D_NQ_NP_757817-CBT110060778544_042026-O.webp"},
+
+{id:45,name:"BRASIER BLANCO 1 36B",price:12,stock:1,categoria:"Ropa",img:"https://lilipinkco.vtexassets.com/arquivos/ids/490453-800-auto?v=639138510072000000&width=800&height=auto&aspect=true"},
+
+{id:46,name:"BRASIER BLANCO 2 36B",price:12,stock:1,categoria:"Ropa",img:"https://lilipinkco.vtexassets.com/arquivos/ids/483492-800-auto?v=639113653820900000&width=800&height=auto&aspect=true"},
+
+{id:47,name:"BRASIER DORADO 36B",price:22,stock:1,categoria:"Ropa",img:"https://womensecret.com/on/demandware.static/-/Sites-gc-ws-master-catalog/default/dwe5592153/images/hi-res/P_505394496D1.jpg"},
+
+{id:48,name:"BRASIER ROSADO SIN BARILLA DEPORTIVO 36B",price:25,stock:1,categoria:"Ropa",img:"https://lilipinkco.vtexassets.com/arquivos/ids/490748-800-auto?v=639138523033700000&width=800&height=auto&aspect=true"},
+
+{id:49,name:"BRASIER ROSADO 36B",price:22.90,stock:1,categoria:"Ropa",img:"https://womensecret.com/on/demandware.static/-/Sites-gc-ws-master-catalog/default/dwa6fe1de6/images/hi-res/P_505226770FM.jpg"},
+
+{id:50,name:"CONJUNTO ROSADO DE 3 UNIDADES EN MICROFIBRA CON ENCAJE",price:23,stock:1,categoria:"Ropa",img:"https://lilipinkco.vtexassets.com/arquivos/ids/447301-800-auto?v=638997558794500000&width=800&height=auto&aspect=true"},
+
+{id:51,name:"CONJUNTO NEGRO DE 3 UNIDADES EN MICROFIBRA CON ENCAJE",price:23,stock:1,categoria:"Ropa",img:"https://lilipinkco.vtexassets.com/arquivos/ids/447383-800-auto?v=638997558799500000&width=800&height=auto&aspect=true"},
+
+{id:52,name:"CONJUNTO BLANCO DE 3 UNIDADES EN MICROFIBRA CON ENCAJE",price:23,stock:1,categoria:"Ropa",img:"https://lilipinkco.vtexassets.com/arquivos/ids/447343-800-auto?v=638997558797130000&width=800&height=auto&aspect=true"},
+
+{id:53,name:"TRAJE DE BAÑO ENTERIZO DETALLES ROSADOS 38B/XL",price:20,stock:1,categoria:"Ropa",img:"https://www.mytheresa.com/image/1094/1238/100/da/P01110690_b1.jpg"},
+
+{id:54,name:"TRAJE DE BAÑO ENTERIZO METALICO 36B/L",price:22,stock:1,categoria:"Ropa",img:"https://img.kwcdn.com/product/fancy/e07ca2b3-da67-4067-af23-c8638f11dc3c.jpg?imageMogr2/auto-orient|imageView2/2/w/800/q/70/format/webp"},
+
+{id:55,name:"CAMISA ECUADOR DE MUJER TALLA M",price:27.90,stock:2,categoria:"Ropa",img:"https://m.media-amazon.com/images/I/71sevzXYlWL._AC_UY1000_.jpg"},
+
+{id:56,name:"SALIDA DE BAÑO CAFÉ M SOLO FALDA",price:12,stock:1,categoria:"Ropa",img:"https://scontent.fuio1-2.fna.fbcdn.net/v/t39.30808-6/469317380_18048826484296814_5096932783518112533_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=127cfc&_nc_ohc=zhSiWlGKaKsQ7kNvwGSUeLE&_nc_oc=AdqhP5IGLpTrwjMuHtUfVhdtK13uFH_czbqSkeSk2Q7D6Ye5EOxjUOk_orRdUnb6ZxY&_nc_zt=23&_nc_ht=scontent.fuio1-2.fna&_nc_gid=xw3zC4c8kRsPfAFyOgw1NQ&_nc_ss=7b289&oh=00_Af-y7fXbDFfigOT4uFxD58DTSjtUr5RM2kX4eTY0U01WgQ&oe=6A28DFBA"},
+
+{id:57,name:"SALIDA DE BAÑO ROSADO L",price:12,stock:1,categoria:"Ropa",img:"https://images-na.ssl-images-amazon.com/images/I/61kXsWP7cSL._AC_UL600_SR600,600_.jpg"},
+
+
+  // =========================
+  // ACCESORIOS PERSONALES
+  // =========================
+ 
+{id:26,name:"CARTERA PARA DAMA GUESS LP",price:40.00,stock:1,categoria:"Accesorios Personales",img:"https://http2.mlstatic.com/D_NQ_NP_775807-MLM107417143149_022026-O.webp"},
+
+{id:27,name:"CARTERA PARA DAMA GUESS LR",price:40.00,stock:1,categoria:"Accesorios Personales",img:"https://http2.mlstatic.com/D_NQ_NP_637692-MLA106955216342_022026-O.webp"},
+
+{id:28,name:"CARTERA PARA DAMA GUESS LB",price:40.00,stock:1,categoria:"Accesorios Personales",img:"https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRy1HIrbsgzvSxfcTk2-1hR5UzanhI0PZXKyJrAPfbZVGYuJ4EE"},
+
+{id:29,name:"CARTERA PARA DAMA GUESS CREMA",price:40.00,stock:1,categoria:"Accesorios Personales",img:"https://assets.central.co.th/file-assets/CDSPIM/web/Image/MKP1093/GUESS-BAGCB327451CADENCESLGSLIMCLUTCHBROWN-MKP1093183763-2.webp"},
+
+{id:30,name:"CARTERA PARA DAMA TOMMY AZUL",price:40.00,stock:1,categoria:"Accesorios Personales",img:"https://media.gotrendier.mx/media/p/2025/07/19/i_ofnuy0evu2ij9d.30f0d49ecebef6ec.jpeg"},
+
+{id:31,name:"CARTERA PARA DAMA TOMMY ROSA",price:40.00,stock:1,categoria:"Accesorios Personales",img:"https://http2.mlstatic.com/D_NQ_NP_861875-MLB89863993155_082025-O.webp"},
+
+{id:32,name:"CARTERA PARA DAMA TOMMY AZUL CON BLANCO",price:40.00,stock:1,categoria:"Accesorios Personales",img:"https://marvelous.com.pe/wp-content/uploads/f7807494-21e8-4d98-8eee-53b2238b3dac.jpg"},
+
+{id:33,name:"TARJETERO STEVE MADDEN NEGRO",price:22.10,stock:1,categoria:"Accesorios Personales",img:"https://http2.mlstatic.com/D_NQ_NP_698570-MLV80174419946_112024-O.webp"},
+
+{id:34,name:"TARJETERO STEVE MADDEN CAFE",price:22.10,stock:1,categoria:"Accesorios Personales",img:"https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRcCaOqIEMNVbwfy9n_ug9ulMaZkoPOm2MRPsjKN8oKatd6K2dh"},
+
+{id:35,name:"TARJETERO STEVE MADDEN CREMA",price:17.00,stock:1,categoria:"Accesorios Personales",img:"https://http2.mlstatic.com/D_NQ_NP_904629-MLM110527365821_042026-O.webp"},
+
+{id:36,name:"BILLETERA TOMMY NEGRA",price:35.00,stock:1,categoria:"Accesorios Personales",img:"https://i.ebayimg.com/images/g/AgMAAeSwsh5oasJP/s-l1200.webp"},
+
+{id:37,name:"BILLETERA MICHAEL KORS CAFE",price:35.00,stock:2,categoria:"Accesorios Personales",img:"https://http2.mlstatic.com/D_NQ_NP_920702-MLA93966663313_102025-O.webp"},
+
+{id:38,name:"BILLETERA CALVIN KLEIN NEGRA 1",price:35.00,stock:1,categoria:"Accesorios Personales",img:"https://i.ebayimg.com/images/g/KLcAAOSwZxNlKz7U/s-l400.jpg"},
+
+{id:39,name:"BILLETERA CALVIN KLEIN NEGRA 2",price:35.00,stock:1,categoria:"Accesorios Personales",img:"https://http2.mlstatic.com/D_NQ_NP_937048-MLM108589802099_032026-O.webp"},
+
+
+
+
+  // =========================
+  // ELECTRODOMÉSTICOS
+  // =========================
+  {id:51,name:"TV 65 Pulgadas",price:682.20,stock:5,categoria:"Electrodomésticos",img:"https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600"},
+  {id:52,name:"Freidora de Aire",price:91.15,stock:5,categoria:"Electrodomésticos",img:"https://pub-ce468fb1221b4cf38f600378b8854a10.r2.dev/2026/05/810072408488-1-5.png"},
+  {id:53,name:"Lavadora Whirlpool 42 lb",price:500.00,stock:5,categoria:"Electrodomésticos",img:"https://promartecuador.vtexassets.com/arquivos/ids/265025-1600-1600"},
+  {id:54,name:"Laptop ASUS Ryzen 5",price:620.00,stock:5,categoria:"Electrodomésticos",img:"https://japon.vtexassets.com/arquivos/ids/181033-800-auto"},
+  {id:55,name:"Cocina Indurama Galicia",price:528.00,stock:5,categoria:"Electrodomésticos",img:"https://mundotek.com.ec/wp-content/uploads/2022/04/GALICIA-ZAFIRO.png"},
+  ];
+
+let cart=[];
+
+function renderFilters(){
+ const f=document.getElementById('filters');
+ const all=["Todos",...categories];
+ f.innerHTML=all.map(c=>`<button class="btn filter-btn ${c===activeCategory?'active':''}" onclick="setCategory('${c}')">${c}</button>`).join('');
+}
+
+function setCategory(cat){
+ activeCategory=cat;
+ renderFilters();
+ renderProducts();
+}
+
+function productCard(p){
+ return `<div class='card'>
+<img src='${p.img}'>
+<h3>${p.name}</h3>
+<p><strong>${p.categoria}</strong></p>
+<p>$${p.price.toFixed(2)}</p>
+<p>Stock: ${p.stock}</p>
+<button class='btn' onclick='addCart(${p.id})'>Agregar al carrito</button>
+</div>`;
+}
+
+function renderProducts(){
+ const container=document.getElementById('products');
+
+ if(activeCategory==="Todos"){
+   container.innerHTML=categories.map(cat=>{
+      const items=products.filter(p=>p.categoria===cat);
+      return `<h2 class="category-title">${cat.toUpperCase()}</h2>
+      <div class="grid">${items.map(productCard).join('')}</div>`;
+   }).join('');
+ } else {
+   const items=products.filter(p=>p.categoria===activeCategory);
+   container.innerHTML=`<h2 class="category-title">${activeCategory.toUpperCase()}</h2>
+   <div class="grid">${items.map(productCard).join('')}</div>`;
+ }
+}
+
+function toggleCart(){document.getElementById('drawer').classList.toggle('open');}
+
+function addCart(id){
+const p=products.find(x=>x.id===id);
+let item=cart.find(x=>x.id===id);
+if(item){if(item.qty>=p.stock){alert('Stock máximo disponible alcanzado.');return;} item.qty++;}
+else{cart.push({...p,qty:1});}
+renderCart();
+}
+
+function renderCart(){
+const container=document.getElementById('cartContainer');
+let total=0,totalItems=0;
+if(cart.length===0){container.innerHTML="<p>No hay productos agregados.</p>";}
+else{
+container.innerHTML=cart.map(item=>{
+const subtotal=item.qty*item.price;
+total+=subtotal; totalItems+=item.qty;
+return `<div style="border-bottom:1px solid #ddd;padding:8px 0">
+<b>${item.name}</b><br>
+Cantidad: ${item.qty}<br>
+Precio unitario: $${item.price.toFixed(2)}<br>
+Subtotal: $${subtotal.toFixed(2)}<br>
+<div class="row"><button onclick="changeQty(${item.id},-1)">-</button><button onclick="changeQty(${item.id},1)">+</button><button onclick="removeItem(${item.id})">🗑</button></div></div>`;
+}).join('');
+}
+document.getElementById('badge').textContent=totalItems;
+document.getElementById('total').textContent='Total a pagar: $'+total.toFixed(2);
+}
+
+function changeQty(id,d){
+const p=products.find(x=>x.id===id), item=cart.find(x=>x.id===id);
+if(!item)return;
+if(item.qty+d>p.stock){alert('Stock máximo disponible alcanzado.');return;}
+item.qty+=d;
+if(item.qty<=0) cart=cart.filter(x=>x.id!==id);
+renderCart();
+}
+function removeItem(id){cart=cart.filter(x=>x.id!==id);renderCart();}
+
+function sendOrder(){
+const n=buyerName.value.trim(), c=buyerCed.value.trim();
+if(!n||!c){alert('Complete nombre y cédula');return;}
+if(cart.length===0){alert('Carrito vacío');return;}
+let total=cart.reduce((a,b)=>a+b.qty*b.price,0);
+let m=`Hospital Saludesa - Pedido Interno\n\nNombre: ${n}\nCédula: ${c}\n\nProductos:\n`;
+cart.forEach(i=>m+=`${i.name} x ${i.qty}\n`);
+m+=`\nTotal: $${total.toFixed(2)}`;
+window.open('https://wa.me/593958759765?text='+encodeURIComponent(m),'_blank');
+}
+
+function sendRequest(){
+let m=`Hola, lo que necesito no está en el catálogo.\n\nNecesito:\n${reqText.value}\n\nNombre: ${reqName.value}\nCédula: ${reqCed.value}`;
+window.open('https://wa.me/593958759765?text='+encodeURIComponent(m),'_blank');
+}
+
+renderFilters();
+renderProducts();
+renderCart();
+</script>
+
+<button id="btnSolicitud" title="Solicitar Producto" onclick="document.getElementById('solicitar-producto').scrollIntoView({behavior:'smooth'});">📝</button>
+</body>
+</html>
